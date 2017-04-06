@@ -1,0 +1,20 @@
+{
+  "name": "homebridge-ikea",
+  "version": "0.0.1",
+  "description": "Ikea gateway support for homebridge",
+  "license": "ISC",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/stenehall/homebridge-ikea.git"
+  },
+  "bugs": {
+    "url": "github.com/stenehall/homebridge-ikea/issues"
+  },
+  "engines": {
+    "node": ">=7.7.2",
+    "homebridge": ">=0.2.0"
+  }
+}
