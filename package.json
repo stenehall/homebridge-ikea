@@ -7,9 +7,11 @@
     "web": "https://stenehall.se"
   },
   "description": "Ikea gateway support for homebridge",
+  "main": "index.js",
   "license": "ISC",
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "ikea"
   ],
   "repository": {
     "type": "git",
