@@ -53,6 +53,15 @@ You'll have to figure out the IP to your gateway yourself (if you've managed to 
 }
 ```
 
+## Credits
+
+Thanks to [r41d](https://github.com/r41d) for figuring out [https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292188880](https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292188880
+)
+
+Thanks to [Hedda](https://github.com/Hedda) for [https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292081839](https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292081839)
+
+And a huge thanks to the rest of the people in [https://github.com/bwssytems/ha-bridge/issues/570](https://github.com/bwssytems/ha-bridge/issues/570)
+
 ## Todos
 - Atm when changing brightness a "setOn" command is also being call causing the light to flicker.
 - Try with multiple lamps
