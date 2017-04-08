@@ -1,6 +1,11 @@
 {
   "name": "homebridge-ikea",
   "version": "0.1.1",
+  "author": {
+    "name": "Johan Stenehall",
+    "email": "stenehall@gmail.com",
+    "web": "https://stenehall.se"
+  },
   "description": "Ikea gateway support for homebridge",
   "license": "ISC",
   "keywords": [
@@ -11,7 +16,7 @@
     "url": "git://github.com/stenehall/homebridge-ikea.git"
   },
   "bugs": {
-    "url": "github.com/stenehall/homebridge-ikea/issues"
+    "url": "https://github.com/stenehall/homebridge-ikea/issues"
   },
   "engines": {
     "node": ">=7.7.2",
