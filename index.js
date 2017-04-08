@@ -11,11 +11,11 @@ module.exports = function(homebridge) {
   Characteristic = homebridge.hap.Characteristic
   UUIDGen = homebridge.hap.uuid // @TODO: Should be using this
 
-  Kelvin = function() {
+  Characteristic.Kelvin = function() {
       Characteristic.call(this, 'Kelvin', UUID_KELVIN)
 
       this.setProps({
-          format: Characteristic.Formats.UINT16,
+          format: Characteristic.Formats.INT,
           unit: 'K',
           maxValue: 4000,
           minValue: 2200,
@@ -25,8 +25,8 @@ module.exports = function(homebridge) {
 
       this.value = this.getDefaultValue();
   }
-  util.inherits(Kelvin, Characteristic);
-  Kelvin.UUID = UUID_KELVIN
+  util.inherits(Characteristic.Kelvin, Characteristic);
+  Characteristic.Kelvin.UUID = UUID_KELVIN
 
   homebridge.registerPlatform("homebridge-ikea", "Ikea", IkeaPlatform)
 }
@@ -84,7 +84,7 @@ IkeaAccessory.prototype = {
     const self = this
 
     const lightbulbService = new Service.Lightbulb(self.name)
-    lightbulbService.addCharacteristic(Kelvin)
+    lightbulbService.addCharacteristic(Characteristic.Kelvin)
 
     lightbulbService
     .getCharacteristic(Characteristic.On)
@@ -122,7 +122,7 @@ IkeaAccessory.prototype = {
     })
 
     lightbulbService
-      .getCharacteristic(Kelvin)
+      .getCharacteristic(Characteristic.Kelvin)
       .on('get', callback => {
         // @TODO: Needs to reverse Kelvin
         callback()
