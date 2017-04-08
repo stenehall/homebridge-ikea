@@ -2,9 +2,17 @@
 
 This is a very quick and still very dirty implementation of [Ikeas gateway](http://www.ikea.com/se/sv/catalog/products/40337806/) with an [Ikea lightbulb](http://www.ikea.com/se/sv/catalog/products/10318263/). As of now it works just fine to turn it on and set the brighness but temperature is not yet working.
 
-## Up and running
+## Functionality
 
-For this to work we first need [libcoap](https://github.com/obgm/libcoap.git) since it seems to be the best tool to talk coap for now.
+- Find all your Ikea lamps connected to your Gateway.
+- Name lamps from Gateway names.
+- Turn on/off lamps
+- Dim lamps
+- Very primitive control of Kelvin, doesn't work in HomeKit app, only tested in Eve
+
+## Dependencies
+
+For this to work you will need [libcoap](https://github.com/obgm/libcoap.git) since it seems to be the best tool to talk coap for now.
 
 ### Install libcoap
 
@@ -22,6 +30,7 @@ git submodule update --init --recursive
 make
 sudo make install
 ```
+
 This gives you a nice little util that you can actually controll your IKEA gateway with.
 
 A command would look something like this.
@@ -29,11 +38,13 @@ A command would look something like this.
 ```
 coap-client -u "Client_identity" -k your-secret-key -m get "coaps://192.168.1.123:5684/15001/65537"
 ```
+
 This will return all information about my lamp.
 
 ```
 coap-client -u "Client_identity" -k your-secret-key -m get "coaps://192.168.1.123:5684/15001"
 ```
+
 Calling above following seems to give you back a list of IDs for known devices. For me that returns `[65536,65537]` Where `65536` is the small remote control I have and `65537` is the lamp.
 
 (All creeds to https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292081839 et. all in that thread)
@@ -53,6 +64,13 @@ You'll have to figure out the IP to your gateway yourself (if you've managed to 
 }
 ```
 
+## Todos
+
+- Improve on Kelvin selection
+- Get lamp state from Gateway on boot
+- Clean up code, make it actually readable
+- Break out all IPSOObjects numbers to utils, hiding it away.
+
 ## Credits
 
 Thanks to [r41d](https://github.com/r41d) for figuring out [https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292188880](https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292188880
@@ -61,9 +79,3 @@ Thanks to [r41d](https://github.com/r41d) for figuring out [https://github.com/b
 Thanks to [Hedda](https://github.com/Hedda) for [https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292081839](https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292081839)
 
 And a huge thanks to the rest of the people in [https://github.com/bwssytems/ha-bridge/issues/570](https://github.com/bwssytems/ha-bridge/issues/570)
-
-## Todos
-- Atm when changing brightness a "setOn" command is also being call causing the light to flicker.
-- Try with multiple lamps
-- Fix temperature of light
-- break out and clean up code (ofcourse)
