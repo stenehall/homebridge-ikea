@@ -40,20 +40,18 @@ Calling above following seems to give you back a list of IDs for known devices. 
 
 ## Add to your config
 
-Once you know the name and id of your lamp add it to your accessories list and you should be good to go. This works nicely for my single lamp, not yet tested with anything more.
+Manually adding all lamps are no fun, right? We want them to just appear for us!
+
+You'll have to figure out the IP to your gateway yourself (if you've managed to compile coap-client I'm guessing you'll handle that). The PSK will be written under the Gateway.
 
 ```
-"accessories": [
-  {
-    "accessory": "Ikea Gateway",
-    "name": "ikea",
-    "id": 65537
-  }
-]
+{
+  "platform": "Ikea",
+  "name": "Gateway",
+  "ip": "192.168.x.xxx",
+  "psk": "xxxxxxxxxxxxxxxx"
+}
 ```
-
-For now the gateways ip is hard-coded into the index.js file of this as well, so you'd have to replace that.
-Same goes with the secret-key. That also needs to be replaced.
 
 ## Todos
 - Atm when changing brightness a "setOn" command is also being call causing the light to flicker.

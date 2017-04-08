@@ -1,80 +1,107 @@
-var exec = require('child_process').exec
-var Service, Characteristic
+var utils = require('./utils')
+var util = require('util')
+
+var Accessory, Service, Characteristic, UUIDGen
 
 module.exports = function(homebridge) {
+  console.log("homebridge API version: " + homebridge.version)
+  Accessory = homebridge.platformAccessory
   Service = homebridge.hap.Service
   Characteristic = homebridge.hap.Characteristic
-  homebridge.registerAccessory("homebridge-ikea", "Ikea Gateway", IkeaAccessory)
+  UUIDGen = homebridge.hap.uuid // @TODO: Should be using this
+
+  homebridge.registerPlatform("homebridge-ikea", "Ikea", IkeaPlatform)
 }
 
-function setState(id, state, callback) {
-  var cmd = "echo '{ \"3311\" : [{ \"5851\" : " + state + " , \"5709\": 33135 , \"5710\": 27211 } ] }' | coap-client -u \"Client_identity\" -k your-secret-key -m put \"coaps://192.168.1.123:5684/15001/" + id + "\" -f -"
-  console.log(cmd)
-  exec(cmd, function(error, stdout, stderr) {
-    console.log(stdout)
-    callback(stdout)
-  })
+function IkeaPlatform(log, config) {
+  this.config = config
+  this.devices = []
+
+  // Device log
+  this.log = string => log("[" + this.name + "] " + string)
 }
 
-function getState(id, callback) {
-  var cmd = 'coap-client -u "Client_identity" -k your-secret-key -m get "coaps://192.168.1.123:5684/15001/' + id + '"'
-  console.log(cmd)
+IkeaPlatform.prototype = {
+  accessories: async function(callback) {
+    const self = this
+    const foundAccessories = []
 
-  exec(cmd, function(error, stdout, stderr) {
-    var state = stdout.match(/"5851":(\d+)/)[1]
-    callback(parseInt(state))
-  })
+    const devices = await utils.getDevices(self.config)
+
+    await Promise.all(devices.map(async deviceId => {
+      const device = await utils.getDevice(self.config, deviceId)
+      if (device.type === 2) {
+        foundAccessories.push(new IkeaAccessory(self.log, self.config, device))
+      }
+    }))
+
+    callback(foundAccessories)
+  }
 }
 
-
-function IkeaAccessory(log, config) {
+function IkeaAccessory(log, config, device) {
   this.log = log
-  this.name = config["name"]
-  this.id = config["id"]
+  this.config = config
+  this.device = device
+
+  this.currentBrightness = this.device.light[0]["5851"]
+  this.currentState = this.device.light[0]["5850"]
+  this.previousBrightness = this.currentBrightness
+  this.name = device.name
 }
 
-IkeaAccessory.prototype.getServices = function() {
+IkeaAccessory.prototype = {
+  // Respond to identify request
+  identify: function(callback) {
+    this.log("Hi!")
+    callback()
+  },
 
-  var service = new Service.AccessoryInformation()
-  service.setCharacteristic(Characteristic.Name, this.name)
+  getServices: function() {
+    var accessoryInformation = new Service.AccessoryInformation()
+    accessoryInformation.setCharacteristic(Characteristic.Name, this.device.name)
     .setCharacteristic(Characteristic.Manufacturer, "Ikea")
     .setCharacteristic(Characteristic.Model, "Lamp")
 
-  var self = this
+    var self = this
 
-  var lightbulbService = new Service.Lightbulb(self.name)
+    var lightbulbService = new Service.Lightbulb(self.name)
 
-  lightbulbService
+    lightbulbService
     .getCharacteristic(Characteristic.On)
     .on('get', function(callback) {
-      console.log("Getting power state on the '%s'...", self.name)
-
-      getState(self.id, function(state) {
-        console.log("state", state)
-        console.log("Power state for the '%s' is %s - %s", self.name, (state == 255 ? 1 : 0), state)
-        callback(null, (state == 255 ? 1 : 0))
+      utils.getDevice(self.config, self.device.instanceId).then(device => {
+        self.currentBrightness = device.light[0]["5851"]
+        self.currentState = device.light[0]["5850"]
+        callback(null, self.currentState)
       })
     })
-    .on('set', function(value, callback) {
-      console.log("value", value)
-      setState(self.id, (value == 1 ? 1 : 0), function(result) {
+    .on('set', function(state, callback) {
+      if (self.currentState == 1 && state == 0) { // We're turned on but want to turn off.
+        self.currentState = 0
+        utils.setBrightness(self.config, self.device.instanceId, 0, result => callback())
+      } else if(self.currentState == 0 && state == 1) {
+        self.currentState = 1
+        utils.setBrightness(self.config, self.device.instanceId, (self.currentBrightness > 1 ? self.currentBrightness : 255), result => callback())
+      } else {
         callback()
-      })
+      }
     })
 
-  lightbulbService
+    lightbulbService
     .getCharacteristic(Characteristic.Brightness)
     .on('get', function(callback) {
-      getState(self.id, function(state) {
-        console.log("Power brightness for the '%s' is %s - %s", self.name, state, Math.floor(state * 100 / 255))
-        callback(null, parseInt(state * 100 / 255))
+      utils.getDevice(self.config, self.device.instanceId).then(device => {
+        self.currentBrightness = device.light[0]["5851"]
+        self.currentState = device.light[0]["5850"]
+        callback(null, parseInt(self.currentBrightness * 100 / 255))
       })
     })
     .on('set', function(powerOn, callback) {
-      console.log("Setting brightness state on the '%s' to %s - %s", self.name, Math.floor(255 * (powerOn / 100)), powerOn)
-      setState(self.id, Math.floor(255 * (powerOn / 100)), function(result) {
-        callback()
-      })
+      self.currentBrightness = Math.floor(255 * (powerOn / 100))
+      utils.setBrightness(self.config, self.device.instanceId, Math.floor(255 * (powerOn / 100)), result => callback())
     })
-  return [service, lightbulbService]
+
+    return [accessoryInformation, lightbulbService]
+  }
 }
