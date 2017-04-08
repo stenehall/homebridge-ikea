@@ -1,14 +1,32 @@
-var utils = require('./utils')
-var util = require('util')
+const utils = require('./utils')
+const util = require('util')
 
-var Accessory, Service, Characteristic, UUIDGen
+let Kelvin, Accessory, Service, Characteristic, UUIDGen
+
+const UUID_KELVIN = 'C4E24248-04AC-44AF-ACFF-40164E829DBA'
 
 module.exports = function(homebridge) {
-  console.log("homebridge API version: " + homebridge.version)
   Accessory = homebridge.platformAccessory
   Service = homebridge.hap.Service
   Characteristic = homebridge.hap.Characteristic
   UUIDGen = homebridge.hap.uuid // @TODO: Should be using this
+
+  Kelvin = function() {
+      Characteristic.call(this, 'Kelvin', UUID_KELVIN)
+
+      this.setProps({
+          format: Characteristic.Formats.UINT16,
+          unit: 'K',
+          maxValue: 4000,
+          minValue: 2200,
+          minStep: 500,
+          perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+      });
+
+      this.value = this.getDefaultValue();
+  }
+  util.inherits(Kelvin, Characteristic);
+  Kelvin.UUID = UUID_KELVIN
 
   homebridge.registerPlatform("homebridge-ikea", "Ikea", IkeaPlatform)
 }
@@ -58,25 +76,26 @@ IkeaAccessory.prototype = {
   },
 
   getServices: function() {
-    var accessoryInformation = new Service.AccessoryInformation()
+    const accessoryInformation = new Service.AccessoryInformation()
     accessoryInformation.setCharacteristic(Characteristic.Name, this.device.name)
     .setCharacteristic(Characteristic.Manufacturer, "Ikea")
     .setCharacteristic(Characteristic.Model, "Lamp")
 
-    var self = this
+    const self = this
 
-    var lightbulbService = new Service.Lightbulb(self.name)
+    const lightbulbService = new Service.Lightbulb(self.name)
+    lightbulbService.addCharacteristic(Kelvin)
 
     lightbulbService
     .getCharacteristic(Characteristic.On)
-    .on('get', function(callback) {
+    .on('get', callback => {
       utils.getDevice(self.config, self.device.instanceId).then(device => {
         self.currentBrightness = device.light[0]["5851"]
         self.currentState = device.light[0]["5850"]
         callback(null, self.currentState)
       })
     })
-    .on('set', function(state, callback) {
+    .on('set', (state, callback) => {
       if (self.currentState == 1 && state == 0) { // We're turned on but want to turn off.
         self.currentState = 0
         utils.setBrightness(self.config, self.device.instanceId, 0, result => callback())
@@ -90,17 +109,27 @@ IkeaAccessory.prototype = {
 
     lightbulbService
     .getCharacteristic(Characteristic.Brightness)
-    .on('get', function(callback) {
+    .on('get', callback => {
       utils.getDevice(self.config, self.device.instanceId).then(device => {
         self.currentBrightness = device.light[0]["5851"]
         self.currentState = device.light[0]["5850"]
         callback(null, parseInt(self.currentBrightness * 100 / 255))
       })
     })
-    .on('set', function(powerOn, callback) {
+    .on('set', (powerOn, callback) => {
       self.currentBrightness = Math.floor(255 * (powerOn / 100))
       utils.setBrightness(self.config, self.device.instanceId, Math.floor(255 * (powerOn / 100)), result => callback())
     })
+
+    lightbulbService
+      .getCharacteristic(Kelvin)
+      .on('get', callback => {
+        // @TODO: Needs to reverse Kelvin
+        callback()
+      })
+      .on('set', (kelvin, callback) => {
+        utils.setKelvin(self.config, self.device.instanceId, parseInt(kelvin), result => callback())
+      })
 
     return [accessoryInformation, lightbulbService]
   }

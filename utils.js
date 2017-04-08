@@ -15,6 +15,41 @@ module.exports.setBrightness = (config, id, brightness, callback) => {
   })
 }
 
+module.exports.setKelvin = (config, id, kelvin, callback) => {
+
+  let colorX, colorY
+
+  switch(true) {
+    // Cold light
+    case (kelvin < 2700):
+      colorX = 24930
+      colorY = 24694
+      break;
+
+    case (kelvin < 4000):
+      colorX = 30140
+      colorY = 26909
+      break;
+
+    // Warm light
+    default:
+      colorX = 33135
+      colorY = 27211
+      break;
+  }
+
+  console.log("Kelvin: %s, colorX: %s, colorY: %s", kelvin, colorX, colorY)
+
+  console.log(`Setting kelvin of ${kelvin} for ${id}`)
+  var cmd = `echo '{ "3311" : [{ "5709": ${colorX} , "5710": ${colorY} }] }' | ${put(config)}${id} -f -`
+  console.log(cmd)
+  exec(cmd, function(error, stdout, stderr) {
+    console.log(stdout)
+    callback(stdout)
+  })
+}
+
+// @TODO: Figure out if the gateway actually don't support this
 module.exports.setOnOff = (config, id, state, callback) => {
   var cmd = `echo '{ "3311" : [{ "5580" : ${state}} ] }' | ${put(config)}${id} -f -`
   console.log(cmd)
@@ -30,8 +65,6 @@ const parseDeviceList = str => {
 }
 
 module.exports.getDevices = config => new Promise((resolve, reject) => {
-  console.log(`Get all devices`)
-
   var cmd = get(config)
   console.log(cmd)
 
@@ -43,10 +76,6 @@ module.exports.getDevices = config => new Promise((resolve, reject) => {
 const parseDevice = str => {
   const split = str.trim().split("\n")
   const json = JSON.parse(split.pop())
-
-  // console.log("------------------")
-  // console.log("json", json)
-  // console.log("------------------")
 
   return {
     name: json["9001"],
