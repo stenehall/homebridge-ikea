@@ -113,12 +113,12 @@ IkeaAccessory.prototype = {
       utils.getDevice(self.config, self.device.instanceId).then(device => {
         self.currentBrightness = device.light[0]["5851"]
         self.currentState = device.light[0]["5850"]
-        callback(null, parseInt(self.currentBrightness * 100 / 255))
+        callback(null, parseInt(Math.round(self.currentBrightness * 100 / 255)))
       })
     })
     .on('set', (powerOn, callback) => {
       self.currentBrightness = Math.floor(255 * (powerOn / 100))
-      utils.setBrightness(self.config, self.device.instanceId, Math.floor(255 * (powerOn / 100)), result => callback())
+      utils.setBrightness(self.config, self.device.instanceId, Math.round(255 * (powerOn / 100)), result => callback())
     })
 
     lightbulbService
