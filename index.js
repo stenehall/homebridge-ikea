@@ -124,8 +124,21 @@ IkeaAccessory.prototype = {
     lightbulbService
       .getCharacteristic(Characteristic.Kelvin)
       .on('get', callback => {
-        // @TODO: Needs to reverse Kelvin
-        callback()
+        utils.getDevice(self.config, self.device.instanceId).then(device => {
+          let colorX, colorY
+          colorX = device.light[0]["5709"]
+          colorY = device.light[0]["5710"]
+          if(colorX == 24930 && colorY == 24694){
+            callback(null, 2200)
+          }else if(colorX == 33135 && colorY == 27211){
+            callback(null, 2700)
+          }else if(colorX == 30140 && colorY == 26909){
+            callback(null, 4000)
+          }else{
+            callback(null, 2200)          
+          }
+        })
+
       })
       .on('set', (kelvin, callback) => {
         utils.setKelvin(self.config, self.device.instanceId, parseInt(kelvin), result => callback())
