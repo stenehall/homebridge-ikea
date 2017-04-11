@@ -78,8 +78,9 @@ IkeaAccessory.prototype = {
   getServices: function() {
     const accessoryInformation = new Service.AccessoryInformation()
     accessoryInformation.setCharacteristic(Characteristic.Name, this.device.name)
-    .setCharacteristic(Characteristic.Manufacturer, "Ikea")
-    .setCharacteristic(Characteristic.Model, "Lamp")
+    .setCharacteristic(Characteristic.Manufacturer, this.device.details["0"])
+    .setCharacteristic(Characteristic.Model, this.device.details["1"])
+    .setCharacteristic(Characteristic.FirmwareRevision, this.device.details["3"])
 
     const self = this
 
