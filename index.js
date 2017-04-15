@@ -78,8 +78,9 @@ IkeaAccessory.prototype = {
   getServices: function() {
     const accessoryInformation = new Service.AccessoryInformation()
     accessoryInformation.setCharacteristic(Characteristic.Name, this.device.name)
-    .setCharacteristic(Characteristic.Manufacturer, "Ikea")
-    .setCharacteristic(Characteristic.Model, "Lamp")
+    .setCharacteristic(Characteristic.Manufacturer, this.device.details["0"])
+    .setCharacteristic(Characteristic.Model, this.device.details["1"])
+    .setCharacteristic(Characteristic.FirmwareRevision, this.device.details["3"])
 
     const self = this
 
@@ -113,19 +114,32 @@ IkeaAccessory.prototype = {
       utils.getDevice(self.config, self.device.instanceId).then(device => {
         self.currentBrightness = device.light[0]["5851"]
         self.currentState = device.light[0]["5850"]
-        callback(null, parseInt(self.currentBrightness * 100 / 255))
+        callback(null, parseInt(Math.round(self.currentBrightness * 100 / 255)))
       })
     })
     .on('set', (powerOn, callback) => {
       self.currentBrightness = Math.floor(255 * (powerOn / 100))
-      utils.setBrightness(self.config, self.device.instanceId, Math.floor(255 * (powerOn / 100)), result => callback())
+      utils.setBrightness(self.config, self.device.instanceId, Math.round(255 * (powerOn / 100)), result => callback())
     })
 
     lightbulbService
       .getCharacteristic(Characteristic.Kelvin)
       .on('get', callback => {
-        // @TODO: Needs to reverse Kelvin
-        callback()
+        utils.getDevice(self.config, self.device.instanceId).then(device => {
+          let colorX, colorY
+          colorX = device.light[0]["5709"]
+          colorY = device.light[0]["5710"]
+          if(colorX == 24930 && colorY == 24694){
+            callback(null, 2200)
+          }else if(colorX == 33135 && colorY == 27211){
+            callback(null, 2700)
+          }else if(colorX == 30140 && colorY == 26909){
+            callback(null, 4000)
+          }else{
+            callback(null, 2200)          
+          }
+        })
+
       })
       .on('set', (kelvin, callback) => {
         utils.setKelvin(self.config, self.device.instanceId, parseInt(kelvin), result => callback())

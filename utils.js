@@ -82,6 +82,7 @@ const parseDevice = str => {
     type: json["5750"],
     createdAt: json["9002"],
     instanceId: json["9003"],
+    details: json["3"],
     reachabilityState: json["9019"],
     lastSeen: json["9020"],
     otaUpdateState: json["9054"],
