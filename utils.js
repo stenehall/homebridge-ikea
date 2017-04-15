@@ -5,10 +5,12 @@ const coap = (method, config) => `coap-client -u "Client_identity" -k "${config.
 const put = config => coap("put", config)
 const get = config => coap("get", config)
 
+const logCommand = cmd => console.log(cmd.replace(/(-k ".*")/, '-k "REDACTED"'))
+
 module.exports.setBrightness = (config, id, brightness, callback) => {
   console.log(`Setting brightness of ${brightness} for ${id}`)
   var cmd = `echo '{ "3311" : [{ "5851" : ${brightness}} ] }' | ${put(config)}${id} -f -`
-  console.log(cmd)
+  logCommand(cmd)
   exec(cmd, function(error, stdout, stderr) {
     console.log(stdout)
     callback(stdout)
@@ -42,7 +44,7 @@ module.exports.setKelvin = (config, id, kelvin, callback) => {
 
   console.log(`Setting kelvin of ${kelvin} for ${id}`)
   var cmd = `echo '{ "3311" : [{ "5709": ${colorX} , "5710": ${colorY} }] }' | ${put(config)}${id} -f -`
-  console.log(cmd)
+  logCommand(cmd)
   exec(cmd, function(error, stdout, stderr) {
     console.log(stdout)
     callback(stdout)
@@ -52,7 +54,7 @@ module.exports.setKelvin = (config, id, kelvin, callback) => {
 // @TODO: Figure out if the gateway actually don't support this
 module.exports.setOnOff = (config, id, state, callback) => {
   var cmd = `echo '{ "3311" : [{ "5580" : ${state}} ] }' | ${put(config)}${id} -f -`
-  console.log(cmd)
+  logCommand(cmd)
   exec(cmd, function(error, stdout, stderr) {
     console.log(stdout)
     callback(stdout)
@@ -66,7 +68,7 @@ const parseDeviceList = str => {
 
 module.exports.getDevices = config => new Promise((resolve, reject) => {
   var cmd = get(config)
-  console.log(cmd)
+  logCommand(cmd)
 
   exec(cmd, function(error, stdout, stderr) {
     resolve(parseDeviceList(stdout))
@@ -110,7 +112,7 @@ const parseDevice = str => {
 module.exports.getDevice = (config, id) => new Promise((resolve, reject) => {
   console.log(`Get device information for: ${id}`)
   var cmd = get(config) + id
-  console.log(cmd)
+  logCommand(cmd)
 
   exec(cmd, function(error, stdout, stderr) {
     resolve(parseDevice(stdout))
