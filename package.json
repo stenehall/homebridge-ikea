@@ -1,6 +1,6 @@
 {
   "name": "homebridge-ikea",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "Johan Stenehall",
     "email": "stenehall@gmail.com",
@@ -11,6 +11,10 @@
   "license": "ISC",
   "keywords": [
     "homebridge-plugin",
+    "homebridge-trådfri",
+    "homebridge-tradfri",
+    "trådfri",
+    "tradfri",
     "ikea"
   ],
   "repository": {
