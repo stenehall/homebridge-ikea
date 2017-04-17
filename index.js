@@ -16,11 +16,11 @@ module.exports = function(homebridge) {
 
       this.setProps({
           format: Characteristic.Formats.INT,
-          unit: 'K',
+          unit: 'Kelvin',
           maxValue: 4000,
           minValue: 2200,
-          minStep: 500,
-          perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE, Characteristic.Perms.NOTIFY]
+          minStep: 1,
+          perms: [Characteristic.Perms.READ, Characteristic.Perms.WRITE]
       });
 
       this.value = this.getDefaultValue();
@@ -32,11 +32,10 @@ module.exports = function(homebridge) {
 }
 
 function IkeaPlatform(log, config) {
+  this.log = log
   this.config = config
+  this.config.log = this.log
   this.devices = []
-
-  // Device log
-  this.log = string => log("[" + this.name + "] " + string)
 }
 
 IkeaPlatform.prototype = {
@@ -58,28 +57,29 @@ IkeaPlatform.prototype = {
 }
 
 function IkeaAccessory(log, config, device) {
-  this.log = log
+  this.name = device.name
   this.config = config
+  this.config.log = string => log("[" + this.name + "] " + string)
   this.device = device
 
   this.currentBrightness = this.device.light[0]["5851"]
   this.currentState = this.device.light[0]["5850"]
   this.previousBrightness = this.currentBrightness
-  this.name = device.name
 }
 
 IkeaAccessory.prototype = {
   // Respond to identify request
   identify: function(callback) {
-    this.log("Hi!")
+    this.config.log("Hi!")
     callback()
   },
 
   getServices: function() {
     const accessoryInformation = new Service.AccessoryInformation()
     accessoryInformation.setCharacteristic(Characteristic.Name, this.device.name)
-    .setCharacteristic(Characteristic.Manufacturer, "Ikea")
-    .setCharacteristic(Characteristic.Model, "Lamp")
+    .setCharacteristic(Characteristic.Manufacturer, this.device.details["0"])
+    .setCharacteristic(Characteristic.Model, this.device.details["1"])
+    .setCharacteristic(Characteristic.FirmwareRevision, this.device.details["3"])
 
     const self = this
 
@@ -113,22 +113,25 @@ IkeaAccessory.prototype = {
       utils.getDevice(self.config, self.device.instanceId).then(device => {
         self.currentBrightness = device.light[0]["5851"]
         self.currentState = device.light[0]["5850"]
-        callback(null, parseInt(self.currentBrightness * 100 / 255))
+        callback(null, parseInt(Math.round(self.currentBrightness * 100 / 255)))
       })
     })
     .on('set', (powerOn, callback) => {
       self.currentBrightness = Math.floor(255 * (powerOn / 100))
-      utils.setBrightness(self.config, self.device.instanceId, Math.floor(255 * (powerOn / 100)), result => callback())
+      utils.setBrightness(self.config, self.device.instanceId, Math.round(255 * (powerOn / 100)), result => callback())
     })
 
     lightbulbService
       .getCharacteristic(Characteristic.Kelvin)
       .on('get', callback => {
-        // @TODO: Needs to reverse Kelvin
-        callback()
+        utils.getDevice(self.config, self.device.instanceId).then(device => {
+          self.currentKelvin = utils.getKelvin(device.light[0]["5709"])
+          callback(null, self.currentKelvin)
+        })
+
       })
       .on('set', (kelvin, callback) => {
-        utils.setKelvin(self.config, self.device.instanceId, parseInt(kelvin), result => callback())
+        utils.setKelvin(self.config, self.device.instanceId, kelvin, result => callback())
       })
 
     return [accessoryInformation, lightbulbService]

@@ -64,10 +64,12 @@ You'll have to figure out the IP to your gateway yourself (if you've managed to 
 }
 ```
 
+If you need the actual coaps communication for debugging add `debug: true` to your config.
+
 ## Todos
 
-- Improve on Kelvin selection
-- Get lamp state from Gateway on boot
+- ~~Improve on Kelvin selection~~ (Cheers [sandyjmacdonald](https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-293914023))
+- ~~Get lamp state from Gateway on boot~~ (Cheers [shoghicp](https://github.com/stenehall/homebridge-ikea/pull/2))
 - Clean up code, make it actually readable
 - Break out all IPSOObjects numbers to utils, hiding it away.
 
