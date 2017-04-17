@@ -70,6 +70,7 @@ If you need the actual coaps communication for debugging add `debug: true` to yo
 
 - ~~Improve on Kelvin selection~~ (Cheers [sandyjmacdonald](https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-293914023))
 - ~~Get lamp state from Gateway on boot~~ (Cheers [shoghicp](https://github.com/stenehall/homebridge-ikea/pull/2))
+-  ~~Don't leak PSKs in log~~ (Cheers [Firehed](https://github.com/stenehall/homebridge-ikea/pull/7))
 - Clean up code, make it actually readable
 - Break out all IPSOObjects numbers to utils, hiding it away.
 
