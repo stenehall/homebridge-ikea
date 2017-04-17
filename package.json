@@ -11,6 +11,10 @@
   "license": "ISC",
   "keywords": [
     "homebridge-plugin",
+    "homebridge-trådfri",
+    "homebridge-tradfri",
+    "trådfri",
+    "tradfri",
     "ikea"
   ],
   "repository": {
