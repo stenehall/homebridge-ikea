@@ -7,10 +7,10 @@ const get = config => coap("get", config)
 
 const kelvinToProcent = kelvin => (kelvin - 2200) / 18 // 4000
 const procentToKelvin = procent => 2200 + (18 * procent) // 4000
-const colorX = procent => Math.round(24930 + (82.05 * procent))  // 33135
-const colorY = procent => Math.round(24694 + (25.17 * (100 - procent))) // 27211
+const colorX = procent => Math.round(33135 - (82.05 * procent))  // 24930
+const colorY = procent => Math.round(27211 - (25.17 * (100 - procent))) // 24694
 
-const getKelvin = colorX => procentToKelvin(Math.round((colorX - 24930) / 82.05))
+const getKelvin = colorX => procentToKelvin(Math.round((33135 - colorX) / 82.05))
 
 module.exports.getKelvin = getKelvin
 
