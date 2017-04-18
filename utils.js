@@ -35,6 +35,100 @@ module.exports.setKelvin = (config, id, kelvin, callback) => {
   }
   callback(execSync(cmd, {encoding: "utf8"}))
 }
+  
+// Source: http://stackoverflow.com/a/9493060
+const hslToRgb = (h, s, l) => {
+  var r, g, b;
+
+  if(s == 0){
+    r = g = b = l; // achromatic
+  } else {
+    var hue2rgb = function hue2rgb(p, q, t){
+      if(t < 0) t += 1;
+      if(t > 1) t -= 1;
+      if(t < 1/6) return p + (q - p) * 6 * t;
+      if(t < 1/2) return q;
+      if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    }
+
+    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    var p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+const hexToRgb = (hex) => {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+const rgbToHsl = (r, g, b) => {
+    r /= 255, g /= 255, b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+
+    if(max == min){
+        h = s = 0; // achromatic
+    }else{
+        var d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch(max){
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+
+    return [h, s, l];
+}
+
+// Source http://stackoverflow.com/a/36061908
+const rgbToXy = (red,green,blue) => {
+  red = (red > 0.04045) ? Math.pow((red + 0.055) / (1.0 + 0.055), 2.4) : (red / 12.92);
+  green = (green > 0.04045) ? Math.pow((green + 0.055) / (1.0 + 0.055), 2.4) : (green / 12.92);
+  blue = (blue > 0.04045) ? Math.pow((blue + 0.055) / (1.0 + 0.055), 2.4) : (blue / 12.92);
+  var X = red * 0.664511 + green * 0.154324 + blue * 0.162028;
+  var Y = red * 0.283881 + green * 0.668433 + blue * 0.047685;
+  var Z = red * 0.000088 + green * 0.072310 + blue * 0.986039;
+  var fx = X / (X + Y + Z);
+  var fy = Y / (X + Y + Z);
+  return [fx.toPrecision(4),fy.toPrecision(4)];
+}
+
+module.exports.convertRGBToHSL = (hex) => {	
+  var c = hexToRgb(hex)
+  return rgbToHsl(c.r, c.g, c.b);
+}
+
+module.exports.setColor = (config, id, color, callback) => {
+  // First we convert hue and saturation
+  // to RGB, with 75% lighntess
+  const rgb = hslToRgb(color.hue, color.saturation, 0.75);
+  // Then we convert the rgb values to
+  // CIE L*a*b XY values
+  const cie = rgbToXy(...rgb).map(item => {
+    // we need to scale the values
+    return Math.floor(100000 * item);
+  });  
+  
+  const arguments = `{ "3311" : [{ "5709" : ${cie[0]}, "5710": ${cie[1]} }] }`
+  const cmd = put(config, id, arguments)
+  
+  if (config.debug) {
+    config.log(cmd)
+  }
+  callback(execSync(cmd, {encoding: "utf8"}))
+}
 
 // @TODO: Figure out if the gateway actually don't support this
 module.exports.setOnOff = (config, id, state, callback) => {
