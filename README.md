@@ -1,53 +1,18 @@
 # Homebridge Ikea
 
-This is a very quick and still very dirty implementation of [Ikeas gateway](http://www.ikea.com/se/sv/catalog/products/40337806/) with an [Ikea lightbulb](http://www.ikea.com/se/sv/catalog/products/10318263/). As of now it works just fine to turn it on and set the brighness but temperature is not yet working.
+A [homebridge](https://github.com/nfarina/homebridge) plugin for [Ikeas Trådfri](http://www.ikea.com/se/sv/catalog/categories/departments/lighting/36812/) lamps using [Ikeas Trådfri gateway](http://www.ikea.com/se/sv/catalog/products/40337806/) with an [Ikea trådfri lightbulb](http://www.ikea.com/se/sv/catalog/products/10318263/). As of now it works just fine for turn lamps on/off and setting the brighness and changing the temperature.
 
 ## Functionality
 
 - Find all your Ikea lamps connected to your Gateway.
-- Name lamps from Gateway names.
-- Turn on/off lamps
-- Dim lamps
-- Very primitive control of Kelvin, doesn't work in HomeKit app, only tested in Eve
+- Uses provided lamp information from the Gateway.
+- Turn on and off your lamps.
+- Dim the lamps.
+- Control the temperature/kelvin of your lamps. Currently doesn't work in HomeKit app, only tested in Eve.
 
 ## Dependencies
 
-For this to work you will need [libcoap](https://github.com/obgm/libcoap.git) since it seems to be the best tool to talk coap for now.
-
-### Install libcoap
-
-This is the little util that we'll be using to actually talk with the gateway. I've tried this on a raspberry pi so any debian:ish should work.
-
-```
-apt-get install libtool
-
-git clone --recursive https://github.com/obgm/libcoap.git
-cd libcoap
-git checkout dtls
-git submodule update --init --recursive
-./autogen.sh
-./configure --disable-documentation --disable-shared
-make
-sudo make install
-```
-
-This gives you a nice little util that you can actually controll your IKEA gateway with.
-
-A command would look something like this.
-
-```
-coap-client -u "Client_identity" -k your-secret-key -m get "coaps://192.168.1.123:5684/15001/65537"
-```
-
-This will return all information about my lamp.
-
-```
-coap-client -u "Client_identity" -k your-secret-key -m get "coaps://192.168.1.123:5684/15001"
-```
-
-Calling above following seems to give you back a list of IDs for known devices. For me that returns `[65536,65537]` Where `65536` is the small remote control I have and `65537` is the lamp.
-
-(All creeds to https://github.com/bwssytems/ha-bridge/issues/570#issuecomment-292081839 et. all in that thread)
+If you're running macOS or linux the included binaries should work out of the box for you and you shouldn't have to provide your own version. If you're running another OS or if the provided binaries aren't working please as the path to `coap-client` using `coapClient`. Here's how [I compiled the included binaries versions](https://github.com/stenehall/homebridge-ikea/wiki/Compile-coap-client).
 
 ## Add to your config
 
