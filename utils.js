@@ -1,6 +1,6 @@
 var execSync = require('child_process').execSync
 
-const coap = (method, config) => `coap-client -u "Client_identity" -k "${config.psk}" -m ${method} coaps://${config.ip}/15001/`
+const coap = (method, config) => `${config.coapClient} -u "Client_identity" -k "${config.psk}" -m ${method} coaps://${config.ip}/15001/`
 
 const put = config => coap("put", config)
 const get = config => coap("get", config)

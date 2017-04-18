@@ -1,5 +1,6 @@
 const utils = require('./utils')
 const util = require('util')
+const os = require('os')
 
 let Kelvin, Accessory, Service, Characteristic, UUIDGen
 
@@ -36,6 +37,12 @@ function IkeaPlatform(log, config) {
   this.config = config
   this.config.log = this.log
   this.devices = []
+
+  if (!this.config.coapClient && (os.platform() !== "darwin" && os.platform() !== "linux")) {
+    throw Error("No coap-client found, please specify the path to it using coapClient")
+  }
+  this.config.coapClient = this.config.coapClient || `${__dirname}/bin/coap-client-${os.platform()}`
+
 }
 
 IkeaPlatform.prototype = {
