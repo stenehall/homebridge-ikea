@@ -2,7 +2,7 @@ var execSync = require('child_process').execSync
 
 const coap = (method, config) => `${config.coapClient} -u "Client_identity" -k "${config.psk}" -m ${method} coaps://${config.ip}/15001/`
 
-const put = config => coap("put", config)
+const put = (config, id) => coap("put", config) + id
 const get = config => coap("get", config)
 
 const kelvinToProcent = kelvin => (kelvin - 2200) / 18 // 4000
@@ -15,7 +15,8 @@ const getKelvin = colorX => procentToKelvin(Math.round((33135 - colorX) / 82.05)
 module.exports.getKelvin = getKelvin
 
 module.exports.setBrightness = (config, id, brightness, callback) => {
-  var cmd = `echo '{ "3311" : [{ "5851" : ${brightness}} ] }' | ${put(config)}${id} -f -`
+  const arguments = `{ "3311" : [{ "5851" : ${brightness}} ] }`
+  const cmd = `${put(config, id)} -e '${arguments}'`
 
   if (config.debug) {
     config.log(`Setting brightness of ${brightness} for ${id}`)
@@ -26,8 +27,9 @@ module.exports.setBrightness = (config, id, brightness, callback) => {
 }
 
 module.exports.setKelvin = (config, id, kelvin, callback) => {
+  const arguments = `{ "3311" : [{ "5709" : ${colorX(kelvinToProcent(kelvin))}, "5710": ${colorY(kelvinToProcent(kelvin))} }] }`
+  var cmd = `${put(config, id)} -e '${arguments}'`
 
-  var cmd = `echo '{ "3311" : [{ "5709" : ${colorX(kelvinToProcent(kelvin))}, "5710": ${colorY(kelvinToProcent(kelvin))} }] }' | ${put(config)}${id} -f -`
   if (config.debug) {
     config.log(cmd)
   }
@@ -36,7 +38,9 @@ module.exports.setKelvin = (config, id, kelvin, callback) => {
 
 // @TODO: Figure out if the gateway actually don't support this
 module.exports.setOnOff = (config, id, state, callback) => {
-  var cmd = `echo '{ "3311" : [{ "5580" : ${state}} ] }' | ${put(config)}${id} -f -`
+  const arguments = `{ "3311" : [{ "5580" : ${state}} ] }`
+  var cmd = `${put(config, id)} -e '${arguments}'`
+
   if (config.debug) {
     config.log(cmd)
   }
