@@ -1,9 +1,9 @@
 var execSync = require('child_process').execSync
 
-const coap = (method, config) => `${config.coapClient} -u "Client_identity" -k "${config.psk}" -m ${method} coaps://${config.ip}/15001/`
+const coap = (method, config, payload = "{}") => `${config.coapClient} -u "Client_identity" -k "${config.psk}" -e '${payload}' -m ${method} coaps://${config.ip}/15001/`
 
-const put = (config, id) => coap("put", config) + id
-const get = config => coap("get", config)
+const put = (config, id, payload) => coap("put", config, payload) + id
+const get = (config, id="") => coap("get", config) + id
 
 const kelvinToProcent = kelvin => (kelvin - 2200) / 18 // 4000
 const procentToKelvin = procent => 2200 + (18 * procent) // 4000
@@ -16,7 +16,7 @@ module.exports.getKelvin = getKelvin
 
 module.exports.setBrightness = (config, id, brightness, callback) => {
   const arguments = `{ "3311" : [{ "5851" : ${brightness}} ] }`
-  const cmd = `${put(config, id)} -e '${arguments}'`
+  const cmd = put(config, id, arguments)
 
   if (config.debug) {
     config.log(`Setting brightness of ${brightness} for ${id}`)
@@ -28,7 +28,7 @@ module.exports.setBrightness = (config, id, brightness, callback) => {
 
 module.exports.setKelvin = (config, id, kelvin, callback) => {
   const arguments = `{ "3311" : [{ "5709" : ${colorX(kelvinToProcent(kelvin))}, "5710": ${colorY(kelvinToProcent(kelvin))} }] }`
-  var cmd = `${put(config, id)} -e '${arguments}'`
+  var cmd = put(config, id, arguments)
 
   if (config.debug) {
     config.log(cmd)
@@ -39,7 +39,7 @@ module.exports.setKelvin = (config, id, kelvin, callback) => {
 // @TODO: Figure out if the gateway actually don't support this
 module.exports.setOnOff = (config, id, state, callback) => {
   const arguments = `{ "3311" : [{ "5580" : ${state}} ] }`
-  var cmd = `${put(config, id)} -e '${arguments}'`
+  var cmd = put(config, id, arguments)
 
   if (config.debug) {
     config.log(cmd)
@@ -97,7 +97,7 @@ const parseDevice = str => {
 
 module.exports.getDevice = (config, id) => new Promise((resolve, reject) => {
 
-  var cmd = get(config) + id
+  var cmd = get(config, id)
   if (config.debug) {
     config.log(`Get device information for: ${id}`)
     config.log(cmd)
