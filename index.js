@@ -11,7 +11,7 @@ module.exports = function(homebridge) {
   Service = homebridge.hap.Service
   Characteristic = homebridge.hap.Characteristic
   UUIDGen = homebridge.hap.uuid // @TODO: Should be using this
-
+  
   Characteristic.Kelvin = function() {
       Characteristic.call(this, 'Kelvin', UUID_KELVIN)
 
@@ -27,7 +27,7 @@ module.exports = function(homebridge) {
       this.value = this.getDefaultValue();
   }
   util.inherits(Characteristic.Kelvin, Characteristic);
-  Characteristic.Kelvin.UUID = UUID_KELVIN
+  Characteristic.Kelvin.UUID = UUID_KELVIN  
 
   homebridge.registerPlatform("homebridge-ikea", "Ikea", IkeaPlatform)
 }
@@ -72,6 +72,7 @@ function IkeaAccessory(log, config, device) {
   this.currentBrightness = this.device.light[0]["5851"]
   this.currentState = this.device.light[0]["5850"]
   this.previousBrightness = this.currentBrightness
+  this.color = {}
 }
 
 IkeaAccessory.prototype = {
@@ -83,7 +84,8 @@ IkeaAccessory.prototype = {
 
   getServices: function() {
     const accessoryInformation = new Service.AccessoryInformation()
-    accessoryInformation.setCharacteristic(Characteristic.Name, this.device.name)
+    accessoryInformation
+    .setCharacteristic(Characteristic.Name, this.device.name)
     .setCharacteristic(Characteristic.Manufacturer, this.device.details["0"])
     .setCharacteristic(Characteristic.Model, this.device.details["1"])
     .setCharacteristic(Characteristic.FirmwareRevision, this.device.details["3"])
@@ -91,7 +93,23 @@ IkeaAccessory.prototype = {
     const self = this
 
     const lightbulbService = new Service.Lightbulb(self.name)
-    lightbulbService.addCharacteristic(Characteristic.Kelvin)
+    
+    lightbulbService
+    .addCharacteristic(Characteristic.StatusActive)
+    
+    lightbulbService
+    .setCharacteristic(Characteristic.StatusActive, this.device.reachabilityState)
+    .setCharacteristic(Characteristic.On, this.device.light[0]["5850"])
+    .setCharacteristic(Characteristic.Brightness, parseInt(Math.round(this.device.light[0]["5851"] * 100 / 255)))
+    
+
+    lightbulbService
+    .getCharacteristic(Characteristic.StatusActive)
+    .on('get', callback => {
+      utils.getDevice(self.config, self.device.instanceId).then(device => {
+        callback(null, device.reachabilityState)
+      })
+    })
 
     lightbulbService
     .getCharacteristic(Characteristic.On)
@@ -103,6 +121,10 @@ IkeaAccessory.prototype = {
       })
     })
     .on('set', (state, callback) => {
+      if (typeof state !== 'number') {
+        state = state ? 1 : 0;
+      }    
+      
       if (self.currentState == 1 && state == 0) { // We're turned on but want to turn off.
         self.currentState = 0
         utils.setBrightness(self.config, self.device.instanceId, 0, result => callback())
@@ -127,19 +149,79 @@ IkeaAccessory.prototype = {
       self.currentBrightness = Math.floor(255 * (powerOn / 100))
       utils.setBrightness(self.config, self.device.instanceId, Math.round(255 * (powerOn / 100)), result => callback())
     })
+            
+    if(typeof this.device.light[0]["5706"] !== 'undefined'){
+        if(this.device.light[0]["5706"].length < 6){
+            this.device.light[0]["5706"] = "ffcea6" //Default value when it was offline
+        }
+        
+        var hsl = utils.convertRGBToHSL(this.device.light[0]["5706"]);
+        
+        lightbulbService
+        .addCharacteristic(Characteristic.Kelvin)
 
-    lightbulbService
-      .getCharacteristic(Characteristic.Kelvin)
-      .on('get', callback => {
-        utils.getDevice(self.config, self.device.instanceId).then(device => {
-          self.currentKelvin = utils.getKelvin(device.light[0]["5709"])
-          callback(null, self.currentKelvin)
+        lightbulbService
+        .setCharacteristic(Characteristic.Kelvin, utils.getKelvin(this.device.light[0]["5709"]))
+        .setCharacteristic(Characteristic.Hue, hsl[0] * 360)
+        .setCharacteristic(Characteristic.Saturation, hsl[1] * 100)
+        
+        
+        lightbulbService
+        .getCharacteristic(Characteristic.Kelvin)
+        .on('get', callback => {
+          utils.getDevice(self.config, self.device.instanceId).then(device => {
+            self.currentKelvin = utils.getKelvin(device.light[0]["5709"])
+            callback(null, self.currentKelvin)
+          })
+        })
+        .on('set', (kelvin, callback) => {
+          utils.setKelvin(self.config, self.device.instanceId, kelvin, result => callback())
         })
 
-      })
-      .on('set', (kelvin, callback) => {
-        utils.setKelvin(self.config, self.device.instanceId, kelvin, result => callback())
-      })
+        lightbulbService
+          .getCharacteristic(Characteristic.Hue)
+          .on('get', callback => {
+            utils.getDevice(self.config, self.device.instanceId).then(device => {
+              if(typeof device.light[0]["5706"] !== 'undefined' || device.light[0]["5706"].length < 6){
+                device.light[0]["5706"] = "ffcea6" //Default value when it fails polling
+              }
+              var hsl = utils.convertRGBToHSL(device.light[0]["5706"]);
+              callback(null, hsl[0] * 360)
+            })
+
+          })
+          .on('set', (hue, callback) => {
+            self.color.hue = hue / 360
+            if (typeof self.color.saturation !== 'undefined') {
+              utils.setColor(self.config, self.device.instanceId, self.color, result => callback())
+              self.color = {}
+            }else{
+              callback()            
+            }
+          })
+
+        lightbulbService
+          .getCharacteristic(Characteristic.Saturation)
+          .on('get', callback => {
+            utils.getDevice(self.config, self.device.instanceId).then(device => {
+              if(typeof device.light[0]["5706"] !== 'undefined' || device.light[0]["5706"].length < 6){
+                device.light[0]["5706"] = "ffcea6" //Default value when it fails polling
+              }
+              var hsl = utils.convertRGBToHSL(device.light[0]["5706"]);
+              callback(null, hsl[1] * 100)
+            })
+
+          })
+          .on('set', (saturation, callback) => {
+            self.color.saturation = saturation / 100
+            if (typeof self.color.hue !== 'undefined') {
+              utils.setColor(self.config, self.device.instanceId, self.color, result => callback())
+              self.color = {}
+            }else{
+              callback()            
+            }
+          })
+    }
 
     return [accessoryInformation, lightbulbService]
   }
