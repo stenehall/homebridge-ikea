@@ -23,7 +23,13 @@ module.exports.setBrightness = (config, id, brightness, callback) => {
     config.log(cmd)
   }
 
-  callback(execSync(cmd, {encoding: "utf8"}))
+  let execSyncResult;
+  try {
+    execSyncResult = execSync(cmd, {encoding: "utf8", timeout: 3000})
+  } catch (error) {
+    execSyncResult = "no_response"
+  }
+  callback(execSyncResult)
 }
 
 module.exports.setKelvin = (config, id, kelvin, callback) => {
@@ -33,7 +39,13 @@ module.exports.setKelvin = (config, id, kelvin, callback) => {
   if (config.debug) {
     config.log(cmd)
   }
-  callback(execSync(cmd, {encoding: "utf8"}))
+  let execSyncResult;
+  try {
+    execSyncResult = execSync(cmd, {encoding: "utf8", timeout: 3000})
+  } catch (error) {
+    execSyncResult = "no_response"
+  }
+  callback(execSyncResult)
 }
   
 // Source: http://stackoverflow.com/a/9493060
@@ -127,7 +139,13 @@ module.exports.setColor = (config, id, color, callback) => {
   if (config.debug) {
     config.log(cmd)
   }
-  callback(execSync(cmd, {encoding: "utf8"}))
+  let execSyncResult;
+  try {
+    execSyncResult = execSync(cmd, {encoding: "utf8", timeout: 3000})
+  } catch (error) {
+    execSyncResult = "no_response"
+  }
+  callback(execSyncResult)
 }
 
 // @TODO: Figure out if the gateway actually don't support this
@@ -138,7 +156,13 @@ module.exports.setOnOff = (config, id, state, callback) => {
   if (config.debug) {
     config.log(cmd)
   }
-  callback(execSync(cmd, {encoding: "utf8"}))
+  let execSyncResult;
+  try {
+    execSyncResult = execSync(cmd, {encoding: "utf8", timeout: 3000})
+  } catch (error) {
+    execSyncResult = "no_response"
+  }
+  callback(execSyncResult)
 }
 
 const parseDeviceList = str => {
@@ -152,7 +176,7 @@ module.exports.getDevices = config => new Promise((resolve, reject) => {
     config.log(cmd)
   }
 
-  resolve(parseDeviceList(execSync(cmd, {encoding: "utf8"})))
+  resolve(parseDeviceList(execSync(cmd, {encoding: "utf8",timeout: 3000})))
 })
 
 const parseDevice = str => {
@@ -197,6 +221,12 @@ module.exports.getDevice = (config, id) => new Promise((resolve, reject) => {
     config.log(cmd)
   }
 
-  resolve(parseDevice(execSync(cmd, {encoding: "utf8"})))
+  let getDeviceResult
+  try {
+    getDeviceResult = execSync(cmd, {encoding: "utf8", timeout: 3000})
+    resolve(parseDevice(getDeviceResult))
+  } catch (error) {
+    resolve(null)
+  }
 
 })
